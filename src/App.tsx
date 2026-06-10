@@ -6,6 +6,9 @@ import './App.css';
 function App() {
   const {
     todos,
+    filteredTodos,
+    filter,
+    setFilter,
     addTodo,
     toggleTodo,
     editTodo,
@@ -24,7 +27,7 @@ function App() {
           <p className="empty-msg">No todos yet. Add one above!</p>
         ) : (
           <ul className="todo-list">
-            {todos.map((todo) => (
+            {filteredTodos.map((todo) => (
               <TodoItem
                 key={todo.id}
                 todo={todo}
@@ -35,6 +38,17 @@ function App() {
             ))}
           </ul>
         )}
+        <div className="todo-filters">
+          {(['all', 'active', 'completed'] as const).map((f) => (
+            <button
+              key={f}
+              className={`todo-filter-btn${filter === f ? ' active' : ''}`}
+              onClick={() => setFilter(f)}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
         <div className="todo-footer">
           <span className="todo-count">
             {activeCount} {activeCount === 1 ? 'item' : 'items'} left

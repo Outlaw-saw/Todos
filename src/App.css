@@ -129,6 +129,36 @@
   color: #af5b5b;
 }
 
+.todo-filters {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #ededed;
+}
+
+.todo-filter-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #777;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 4px 8px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.todo-filter-btn:hover {
+  border-color: rgba(175, 91, 91, 0.3);
+  color: #555;
+}
+
+.todo-filter-btn.active {
+  border-color: #af5b5b;
+  color: #af5b5b;
+}
+
 .todo-footer {
   display: flex;
   justify-content: space-between;

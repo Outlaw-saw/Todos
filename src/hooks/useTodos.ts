@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Todo } from '../types';
+import type { Todo, Filter } from '../types';
 
 const STORAGE_KEY = 'todos';
 
@@ -17,6 +17,7 @@ function saveTodos(todos: Todo[]): void {
 
 export function useTodos() {
   const [todos, setTodos] = useState<Todo[]>(loadTodos);
+  const [filter, setFilter] = useState<Filter>('all');
 
   useEffect(() => {
     saveTodos(todos);
@@ -55,8 +56,17 @@ export function useTodos() {
   const activeCount = todos.filter((t) => !t.completed).length;
   const completedCount = todos.length - activeCount;
 
+  const filteredTodos = todos.filter((t) => {
+    if (filter === 'active') return !t.completed;
+    if (filter === 'completed') return t.completed;
+    return true;
+  });
+
   return {
     todos,
+    filteredTodos,
+    filter,
+    setFilter,
     addTodo,
     toggleTodo,
     editTodo,
