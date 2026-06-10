@@ -8,6 +8,7 @@ function App() {
   const { theme, toggleTheme } = useTheme();
   const {
     loading,
+    now,
     todos,
     filteredTodos,
     filter,
@@ -54,6 +55,7 @@ function App() {
               <TodoItem
                 key={todo.id}
                 todo={todo}
+                now={now}
                 onToggle={toggleTodo}
                 onEdit={editTodo}
                 onDelete={deleteTodo}

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Todo, Filter } from '../types';
+import { priority } from '../utils/time';
 
 const STORAGE_KEY = 'todos';
 
@@ -17,23 +18,10 @@ function saveTodos(todos: Todo[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
 }
 
-function priority(t: Todo): number {
-  if (!t.dueTime || t.completed) return 2;
-  const now = Date.now();
-  const [h, m] = t.dueTime.split(':').map(Number);
-  const d = new Date(now);
-  const due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m);
-  if (due.getTime() <= now) due.setDate(due.getDate() + 1);
-  const diff = due.getTime() - now;
-  if (diff <= 0) return 0;
-  if (diff <= 3600000) return 1;
-  return 2;
-}
-
-function sortByDue(list: Todo[]): Todo[] {
+function sortByDue(list: Todo[], now: number): Todo[] {
   return [...list].sort((a, b) => {
-    const pa = priority(a);
-    const pb = priority(b);
+    const pa = priority(a.dueTime, a.completed, now);
+    const pb = priority(b.dueTime, b.completed, now);
     if (pa !== pb) return pa - pb;
     if (a.dueTime && b.dueTime) return a.dueTime.localeCompare(b.dueTime);
     if (a.dueTime) return -1;
@@ -46,6 +34,7 @@ export function useTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
+  const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
     const stored = loadTodos();
@@ -54,6 +43,11 @@ export function useTodos() {
       setLoading(false);
     }, 300);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -72,19 +66,19 @@ export function useTodos() {
       createdAt: Date.now(),
       dueTime,
     };
-    setTodos((prev) => sortByDue([todo, ...prev]));
+    setTodos((prev) => [todo, ...prev]);
     return true;
   }
 
   function toggleTodo(id: string) {
     setTodos((prev) =>
-      sortByDue(prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)))
+      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
   }
 
   function editTodo(id: string, text: string) {
     setTodos((prev) =>
-      sortByDue(prev.map((t) => (t.id === id ? { ...t, text: text.trim() } : t)))
+      prev.map((t) => (t.id === id ? { ...t, text: text.trim() } : t))
     );
   }
 
@@ -93,13 +87,15 @@ export function useTodos() {
   }
 
   function clearCompleted() {
-    setTodos((prev) => sortByDue(prev.filter((t) => !t.completed)));
+    setTodos((prev) => prev.filter((t) => !t.completed));
   }
+
+  const sortedTodos = useMemo(() => sortByDue(todos, now), [todos, now]);
 
   const activeCount = todos.filter((t) => !t.completed).length;
   const completedCount = todos.length - activeCount;
 
-  const filteredTodos = todos.filter((t) => {
+  const filteredTodos = sortedTodos.filter((t) => {
     if (filter === 'active') return !t.completed;
     if (filter === 'completed') return t.completed;
     return true;
@@ -107,6 +103,7 @@ export function useTodos() {
 
   return {
     loading,
+    now,
     todos,
     filteredTodos,
     filter,

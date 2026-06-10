@@ -1,27 +1,23 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
 import type { Todo } from '../types';
+import { isOverdue, isDueSoon } from '../utils/time';
 
 interface Props {
   todo: Todo;
+  now: number;
   onToggle: (id: string) => void;
   onEdit: (id: string, text: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function TodoItem({ todo, onToggle, onEdit, onDelete }: Props) {
+export function TodoItem({ todo, now, onToggle, onEdit, onDelete }: Props) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(todo.text);
-  const [now, setNow] = useState(Date.now);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
   }, [editing]);
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(id);
-  }, []);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -47,27 +43,8 @@ export function TodoItem({ todo, onToggle, onEdit, onDelete }: Props) {
     setEditing(false);
   }
 
-  function makeDueDate() {
-    const [h, m] = todo.dueTime!.split(':').map(Number);
-    const d = new Date(now);
-    const due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m);
-    if (due.getTime() <= now) due.setDate(due.getDate() + 1);
-    return due;
-  }
-
-  function isOverdue() {
-    if (!todo.dueTime || todo.completed) return false;
-    return now > makeDueDate().getTime();
-  }
-
-  function isDueSoon() {
-    if (!todo.dueTime || todo.completed) return false;
-    const diff = makeDueDate().getTime() - now;
-    return diff > 0 && diff <= 3600000;
-  }
-
-  const overdue = isOverdue();
-  const dueSoon = !overdue && isDueSoon();
+  const overdue = isOverdue(todo.dueTime, todo.completed, now);
+  const dueSoon = !overdue && isDueSoon(todo.dueTime, todo.completed, now);
 
   function formatDue(due: string) {
     const [h, m] = due.split(':');
