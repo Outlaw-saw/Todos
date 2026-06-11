@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent } from 'react';
 
 interface Props {
-  onAdd: (text: string, dueTime: string) => boolean;
+  onAdd: (text: string, dueTime: string) => Promise<boolean>;
 }
 
 export function TodoForm({ onAdd }: Props) {
@@ -24,7 +24,7 @@ export function TodoForm({ onAdd }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) {
@@ -35,7 +35,7 @@ export function TodoForm({ onAdd }: Props) {
       setError('Please set a due time');
       return;
     }
-    if (!onAdd(trimmed, dueTime)) {
+    if (!(await onAdd(trimmed, dueTime))) {
       setError('Already added');
       return;
     }

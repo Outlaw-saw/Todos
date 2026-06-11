@@ -2,21 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { Todo, Filter } from '../types';
 import { priority } from '../utils/time';
 
-const STORAGE_KEY = 'todos';
-
-function loadTodos(): Todo[] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {
-    // localStorage unavailable
-  }
-  return [];
-}
-
-function saveTodos(todos: Todo[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-}
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 function sortByDue(list: Todo[], now: number): Todo[] {
   return [...list].sort((a, b) => {
@@ -30,6 +16,26 @@ function sortByDue(list: Todo[], now: number): Todo[] {
   });
 }
 
+interface ApiTodo {
+  id: number;
+  title: string;
+  completed: boolean;
+  due_time: string | null;
+  created_at: string;
+}
+
+async function fetchAll(): Promise<Todo[]> {
+  const res = await fetch(`${BASE_URL}/todos`);
+  const data: ApiTodo[] = await res.json();
+  return data.map((item) => ({
+    id: String(item.id),
+    text: item.title,
+    completed: item.completed,
+    createdAt: Date.parse(item.created_at),
+    dueTime: item.due_time ?? null,
+  }));
+}
+
 export function useTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,12 +43,9 @@ export function useTodos() {
   const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
-    const stored = loadTodos();
-    const timer = setTimeout(() => {
-      setTodos(stored);
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    fetchAll()
+      .then(setTodos)
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -50,44 +53,56 @@ export function useTodos() {
     return () => clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    if (!loading) saveTodos(todos);
-  }, [todos, loading]);
+  async function refresh() {
+    setTodos(await fetchAll());
+  }
 
-  function addTodo(text: string, dueTime: string): boolean {
+  async function addTodo(text: string, dueTime: string): Promise<boolean> {
     const trimmed = text.trim();
     if (todos.some((t) => t.text.toLowerCase() === trimmed.toLowerCase())) {
       return false;
     }
-    const todo: Todo = {
-      id: crypto.randomUUID(),
-      text: trimmed,
-      completed: false,
-      createdAt: Date.now(),
-      dueTime,
-    };
-    setTodos((prev) => [todo, ...prev]);
+    await fetch(`${BASE_URL}/todos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: trimmed, completed: false, due_time: dueTime }),
+    });
+    await refresh();
     return true;
   }
 
-  function toggleTodo(id: string) {
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+  async function toggleTodo(id: string) {
+    const todo = todos.find((t) => t.id === id);
+    if (!todo) return;
+    await fetch(`${BASE_URL}/todos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    await refresh();
+  }
+
+  async function editTodo(id: string, text: string) {
+    await fetch(`${BASE_URL}/todos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: text.trim() }),
+    });
+    await refresh();
+  }
+
+  async function deleteTodo(id: string) {
+    await fetch(`${BASE_URL}/todos/${id}`, { method: 'DELETE' });
+    await refresh();
+  }
+
+  async function clearCompleted() {
+    await Promise.all(
+      todos
+        .filter((t) => t.completed)
+        .map((t) => fetch(`${BASE_URL}/todos/${t.id}`, { method: 'DELETE' }))
     );
-  }
-
-  function editTodo(id: string, text: string) {
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, text: text.trim() } : t))
-    );
-  }
-
-  function deleteTodo(id: string) {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-  }
-
-  function clearCompleted() {
-    setTodos((prev) => prev.filter((t) => !t.completed));
+    await refresh();
   }
 
   const sortedTodos = useMemo(() => sortByDue(todos, now), [todos, now]);
