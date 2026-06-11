@@ -3,6 +3,12 @@ import type { Todo, Filter } from '../types';
 import { priority } from '../utils/time';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const TOKEN_KEY = 'token';
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : { 'Content-Type': 'application/json' };
+}
 
 function sortByDue(list: Todo[], now: number): Todo[] {
   return [...list].sort((a, b) => {
@@ -24,8 +30,16 @@ interface ApiTodo {
   created_at: string;
 }
 
+async function handleAuthError(res: Response): Promise<Response> {
+  if (res.status === 401) {
+    localStorage.removeItem(TOKEN_KEY);
+    window.location.href = '/login';
+  }
+  return res;
+}
+
 async function fetchAll(): Promise<Todo[]> {
-  const res = await fetch(`${BASE_URL}/todos`);
+  const res = await handleAuthError(await fetch(`${BASE_URL}/todos`, { headers: authHeaders() }));
   const data: ApiTodo[] = await res.json();
   return data.map((item) => ({
     id: String(item.id),
@@ -62,11 +76,11 @@ export function useTodos() {
     if (todos.some((t) => t.text.toLowerCase() === trimmed.toLowerCase())) {
       return false;
     }
-    await fetch(`${BASE_URL}/todos`, {
+    await handleAuthError(await fetch(`${BASE_URL}/todos`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ title: trimmed, completed: false, due_time: dueTime }),
-    });
+    }));
     await refresh();
     return true;
   }
@@ -74,25 +88,25 @@ export function useTodos() {
   async function toggleTodo(id: string) {
     const todo = todos.find((t) => t.id === id);
     if (!todo) return;
-    await fetch(`${BASE_URL}/todos/${id}`, {
+    await handleAuthError(await fetch(`${BASE_URL}/todos/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ completed: !todo.completed }),
-    });
+    }));
     await refresh();
   }
 
   async function editTodo(id: string, text: string) {
-    await fetch(`${BASE_URL}/todos/${id}`, {
+    await handleAuthError(await fetch(`${BASE_URL}/todos/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: JSON.stringify({ title: text.trim() }),
-    });
+    }));
     await refresh();
   }
 
   async function deleteTodo(id: string) {
-    await fetch(`${BASE_URL}/todos/${id}`, { method: 'DELETE' });
+    await handleAuthError(await fetch(`${BASE_URL}/todos/${id}`, { method: 'DELETE', headers: authHeaders() }));
     await refresh();
   }
 
@@ -100,7 +114,7 @@ export function useTodos() {
     await Promise.all(
       todos
         .filter((t) => t.completed)
-        .map((t) => fetch(`${BASE_URL}/todos/${t.id}`, { method: 'DELETE' }))
+        .map((t) => fetch(`${BASE_URL}/todos/${t.id}`, { method: 'DELETE', headers: authHeaders() }))
     );
     await refresh();
   }

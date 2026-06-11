@@ -22,10 +22,6 @@
 }
 
 .theme-toggle {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   background: none;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -45,7 +41,7 @@
 }
 
 .theme-toggle:active {
-  transform: translateY(-50%) scale(0.92);
+  transform: scale(0.92);
 }
 
 .todo-card {
@@ -438,4 +434,122 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.app-header-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 6px 12px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.logout-btn:hover {
+  border-color: var(--color-delete-hover);
+  color: var(--color-delete-hover);
+  background: var(--color-hover-overlay);
+}
+
+.auth-page {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+
+.auth-card {
+  background: var(--color-surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  padding: 32px;
+}
+
+.auth-title {
+  font-size: 60px;
+  font-weight: 200;
+  text-align: center;
+  color: var(--color-title);
+  margin: 0 0 8px;
+  user-select: none;
+  line-height: 1;
+}
+
+.auth-heading {
+  font-size: 20px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--color-text);
+  margin: 0 0 24px;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--color-text);
+  background: transparent;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.auth-input:focus {
+  border-color: var(--color-accent);
+}
+
+.auth-error {
+  color: var(--color-danger);
+  font-size: 14px;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.auth-btn:hover {
+  background: var(--color-accent-hover);
+}
+
+.auth-link {
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 16px 0 0;
+}
+
+.auth-link a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.auth-link a:hover {
+  text-decoration: underline;
 }

@@ -1,11 +1,16 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
 import { useTodos } from './hooks/useTodos';
 import { useTheme } from './hooks/useTheme';
 import { TodoForm } from './components/TodoForm';
 import { TodoItem } from './components/TodoItem';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import './App.css';
 
-function App() {
+function TodoApp() {
   const { theme, toggleTheme } = useTheme();
+  const { logout } = useAuth();
   const {
     loading,
     now,
@@ -26,9 +31,12 @@ function App() {
     <div className="app">
       <div className="app-header">
         <h1 className="title">todos</h1>
-        <button className="theme-toggle" onClick={toggleTheme}>
-          {theme === 'light' ? '\u263E' : '\u2600'}
-        </button>
+        <div className="app-header-actions">
+          <button className="theme-toggle" onClick={toggleTheme}>
+            {theme === 'light' ? '\u263E' : '\u2600'}
+          </button>
+          <button className="logout-btn" onClick={logout}>Logout</button>
+        </div>
       </div>
       <div className="todo-card">
         <TodoForm onAdd={addTodo} />
@@ -89,4 +97,20 @@ function App() {
   );
 }
 
-export default App;
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+export default function App() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/" element={<ProtectedRoute><TodoApp /></ProtectedRoute>} />
+    </Routes>
+  );
+}
