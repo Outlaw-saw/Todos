@@ -16,12 +16,20 @@ export function Login() {
       setError('Please fill in all fields');
       return;
     }
-    const ok = await login(username.trim(), password);
-    if (!ok) {
-      setError('Invalid username or password');
-      return;
+    console.log('[Login] submitting with username:', username.trim());
+    try {
+      const ok = await login(username.trim(), password);
+      console.log('[Login] login result:', ok);
+      if (!ok) {
+        setError('Invalid username or password');
+        return;
+      }
+      console.log('[Login] redirecting to /');
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error('[Login] unexpected error:', err);
+      setError('An unexpected error occurred. Check console for details.');
     }
-    navigate('/', { replace: true });
   }
 
   return (

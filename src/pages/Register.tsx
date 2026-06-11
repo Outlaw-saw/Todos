@@ -25,12 +25,20 @@ export function Register() {
       setError('Password must be at least 3 characters');
       return;
     }
-    const ok = await register(username.trim(), password);
-    if (!ok) {
-      setError('Registration failed. Username may already exist.');
-      return;
+    console.log('[Register] submitting with username:', username.trim());
+    try {
+      const ok = await register(username.trim(), password);
+      console.log('[Register] register result:', ok);
+      if (!ok) {
+        setError('Registration failed. Username may already exist.');
+        return;
+      }
+      console.log('[Register] redirecting to /login');
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error('[Register] unexpected error:', err);
+      setError('An unexpected error occurred. Check console for details.');
     }
-    navigate('/login', { replace: true });
   }
 
   return (
